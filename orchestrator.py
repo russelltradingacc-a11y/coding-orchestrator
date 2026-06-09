@@ -3,7 +3,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
@@ -173,3 +173,16 @@ async def get_file(session_id: str):
 @app.get("/sessions")
 async def list_sessions():
     return {"sessions": list(session_memory.keys())}
+
+# ---------- Temporary diagnostic endpoint ----------
+@app.get("/debug/env")
+async def debug_env():
+    # Check exactly what the app sees
+    env_vars_present = {k: "present (masked)" if k.startswith("OPENAI") else v for k, v in os.environ.items()}
+    return {
+        "OPENAI_API_KEY_set": "OPENAI_API_KEY" in os.environ,
+        "OPENAI_API_KEY_value_starts": os.getenv("OPENAI_API_KEY", "")[:10] + "..."
+        if os.getenv("OPENAI_API_KEY") else "MISSING",
+        "OPENAI_BASE_URL": os.getenv("OPENAI_BASE_URL", "NOT SET"),
+        "raw_env_keys": list(os.environ.keys()),
+    }
