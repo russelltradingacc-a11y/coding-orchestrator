@@ -83,10 +83,10 @@ def extract_code_block(text: str) -> str:
     return text.strip()
 
 async def orchestrate_task(task: str, session_id: str) -> OrchestrateResponse:
-    # ----------- lazy client creation -------------
-    api_key = os.getenv("OPENAI_API_KEY")
+    # ----------- lazy client creation (supports both DEEPSEEK_V4 and OPENAI_API_KEY) -------------
+    api_key = os.getenv("DEEPSEEK_V4") or os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY environment variable not set")
+        raise HTTPException(status_code=500, detail="API key not set – add DEEPSEEK_V4 or OPENAI_API_KEY")
     client = AsyncOpenAI(
         api_key=api_key,
         base_url=os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com"),
@@ -174,15 +174,14 @@ async def get_file(session_id: str):
 async def list_sessions():
     return {"sessions": list(session_memory.keys())}
 
-# ---------- Temporary diagnostic endpoint ----------
+# ---------- Temporary diagnostic endpoint (can be removed later) ----------
 @app.get("/debug/env")
 async def debug_env():
     # Check exactly what the app sees
-    env_vars_present = {k: "present (masked)" if k.startswith("OPENAI") else v for k, v in os.environ.items()}
     return {
-        "OPENAI_API_KEY_set": "OPENAI_API_KEY" in os.environ,
-        "OPENAI_API_KEY_value_starts": os.getenv("OPENAI_API_KEY", "")[:10] + "..."
-        if os.getenv("OPENAI_API_KEY") else "MISSING",
-        "OPENAI_BASE_URL": os.getenv("OPENAI_BASE_URL", "NOT SET"),
+        "DEEPSEEK_V4_set": "DEEPSEEK_V4" in os.environ,
+        "DEEPSEEK_V4_value_starts": os.getenv("DEEPSEEK_V4", "")[:10] + "..."
+        if os.getenv("DEEPSEEK_V4") else "MISSING",
+        "OPENAI_BASE_URL": os.getenv("OPENAI_BASE_URL", "NOT SET (defaults to https://api.deepseek.com)"),
         "raw_env_keys": list(os.environ.keys()),
     }
